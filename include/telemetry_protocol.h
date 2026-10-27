@@ -25,4 +25,6 @@ typedef struct {
 
 uint16_t calculate_crc16(const uint8_t *data, uint16_t length);
 
+void pack_frame(mav_frame_t *frame, uint8_t pkt_type, uint8_t priority, uint8_t packet_counter, const uint8_t *payload, uint8_t length);
+
 #endif
