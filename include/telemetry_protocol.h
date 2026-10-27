@@ -27,4 +27,18 @@ uint16_t calculate_crc16(const uint8_t *data, uint16_t length);
 
 void pack_frame(mav_frame_t *frame, uint8_t pkt_type, uint8_t priority, uint8_t packet_counter, const uint8_t *payload, uint8_t length);
 
+typedef enum {
+    RX_WAIT_PREAMBLE_MSB,
+    RX_WAIT_PREAMBLE_LSB,
+    RX_WAIT_HEADER,
+    RX_WAIT_PAYLOAD,
+    RX_WAIT_CRC
+} rx_state_t;
+
+typedef struct {
+    rx_state_t state;
+    mav_frame_t frame;
+    uint8_t byte_index;
+} parser_context_t;
+
 #endif
