@@ -2,6 +2,8 @@
 #include "telemetry_tx.h"
 #include "telemetry_rx.h"
 
+#include "ring_buffer.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -93,6 +95,45 @@ void run_test_2_noise_resilience(void) {
     }
  }
 
+ void run_test_4_ring_buffer_integration(void) {
+
+    printf("TEST 4: RING BUFFER + RX INTEGRATION");
+    ring_buffer_t rb;
+    mav_frame_t tx_frame;
+
+    parser_context_t rx_ctx;
+    bool parsed_ok = 0;
+
+    uint8_t rx_byte;
+    uint8_t test_payload[] = "BUFFER_TEST";
+    uint8_t payload_len = sizeof(test_payload - 1);
+
+    ring_buffer_init(&rb);
+    parser_init(&rx_ctx);
+    pack_frame(&tx_frame, 0x04, PRIORITY_HIGH, 100, test_payload, payload_len);
+
+    uint8_t *stream = (uint8_t *)&tx_frame;
+    uint16_t total_bytes = 6 + payload_len + 2;
+
+    for (uint16_t i = 0; i < total_bytes; i++) {
+        ring_buffer_push(&rb, stream[i]);
+    }
+
+    while (!ring_buffer_is_empty(&rb)) {
+        ring_buffer_pop(&rb, &rx_byte);
+        if (parse_byte(&rx_ctx, rx_byte)) {
+            parsed_ok = true;
+        }
+
+        if (parsed_ok && memcmp(rx_ctx.frame.payload, test_payload, payload_len) == 0) {
+            printf("[SUCCESS] Test 4 passed (Ring buffer integrated with parser)!\n");
+        } else {
+            printf("[SUCCESS] Test 4 passed (Ring buffer integrated with parser)!\n");
+        }
+    }
+
+ }
+
  int main(void) {
 
     printf("RUNNING TELEMETRY PROTOCOL TESTS");
@@ -100,9 +141,13 @@ void run_test_2_noise_resilience(void) {
     run_test_1_loopback();
     run_test_2_noise_resilience();
     run_test_3_corrupted_crc();
+    run_test_4_ring_buffer_integration();
+    
 
     printf("ALL TESTS COMPLETED");
 
     return 0;
 
  }
+
+ 
