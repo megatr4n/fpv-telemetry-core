@@ -4,6 +4,8 @@
 
 #include "ring_buffer.h"
 
+#include "usart.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -136,18 +138,39 @@ void run_test_2_noise_resilience(void) {
 
  int main(void) {
 
-    printf("RUNNING TELEMETRY PROTOCOL TESTS");
+    HAL_Init();
+    usart1_init();
+    
+    printf("FPV TELEMETRY PROTOCOL INITIALIZATION");
 
     run_test_1_loopback();
     run_test_2_noise_resilience();
     run_test_3_corrupted_crc();
     run_test_4_ring_buffer_integration();
     
+    printf("\n STARTING HARDWARE RX/TX LOOP \n");
 
-    printf("ALL TESTS COMPLETED");
+    parser_context_t rx_ctx;
+    parser_init(&rx_ctx);
 
+    uint8_t byte = 0;
+    mav_frame_t ack_frame;
+
+    while (1) {
+        while (ring_buffer_pop(&rx_rb, &byte)) {
+            if (parse_byte(&rx_ctx, byte)) {
+                printf("[UART RX] Valid frame received! Packet Type: 0x%02X, Length: %d\n",
+                       rx_ctx.frame.packet_type, rx_ctx.frame.length);
+
+                uint8_t ack_payload[] = "ACK";
+                pack_frame(&ack_frame, 0xFE, PRIORITY_HIGH, rx_ctx.frame.packet_counter, ack_payload, 3);
+
+                usart1_transmit((const uint8_t *)&ack_frame, 6 + 3 + 2);
+                parser_init(&rx_ctx);
+            }
+        }
+    }
     return 0;
-
  }
 
  
