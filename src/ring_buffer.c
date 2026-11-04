@@ -28,7 +28,7 @@ bool ring_buffer_pop(ring_buffer_t* rb, uint8_t* byte) {
     }
 };
 
-bool ring_buffer_empty(const ring_buffer_t* rb) {
-   return rb->head == rb->tail;
+bool ring_buffer_is_empty(const ring_buffer_t *rb) {
+    return rb->head == rb->tail;
 };
 
